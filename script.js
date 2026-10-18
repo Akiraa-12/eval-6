@@ -132,3 +132,125 @@ console.log(transaksiBersih);
 // 5. Function declaration: bersihkanNama — dipakai berulang, butuh hoisting.
 //    Function expression: ubahKeAngka — utilitas yang cukup disimpan di const.
 //    Arrow function: ambilPersenVoucher dan formatRupiah — singkat, tidak butuh this sendiri, dan mudah dibaca sebagai expression.
+
+// BAGIAN 4: LAPORAN HARIAN 
+
+const laporan = {
+  jumlahTransaksi: kasir.riwayat.length,
+  jumlahLunas: 0,
+  jumlahKurang: 0,
+  jumlahDitolak: 0,
+  pendapatan: 0,
+  rataRata: 0,
+  transaksiTerbesar: null,
+  penjualanPerMenu: {},
+  menuTerlaris: "",
+  daftarDitolak: [],
+  kodeLunas: [],
+  ringkasanKode: "",
+  menuStokMenipis: []
+};
+
+// Hitung status, pendapatan, transaksi terbesar, penjualan per menu, kodeLunas.
+for (const trx of kasir.riwayat) {
+  if (trx.status === "LUNAS") {
+    laporan.jumlahLunas++;
+    laporan.pendapatan += trx.total;
+    laporan.kodeLunas.push(trx.kode);
+
+    if (laporan.transaksiTerbesar === null || trx.total > laporan.transaksiTerbesar.total) {
+      laporan.transaksiTerbesar = trx;
+    }
+
+    for (const item of trx.itemValid) {
+      const namaMenu = item.menu.nama;
+      if (namaMenu in laporan.penjualanPerMenu) {
+        laporan.penjualanPerMenu[namaMenu] += item.jumlah;
+      } else {
+        laporan.penjualanPerMenu[namaMenu] = item.jumlah;
+      }
+    }
+  } else if (trx.status === "KURANG") {
+    laporan.jumlahKurang++;
+  } else {
+    laporan.jumlahDitolak++;
+    laporan.daftarDitolak.push({ kode: trx.kode, alasan: trx.alasan });
+  }
+}
+
+// Rata-rata: hanya dari transaksi LUNAS.
+laporan.rataRata = Math.round(laporan.pendapatan / laporan.jumlahLunas);
+
+// Cari menu terlaris dari penjualanPerMenu.
+let jumlahTerbanyak = 0;
+for (const nama in laporan.penjualanPerMenu) {
+  if (laporan.penjualanPerMenu[nama] > jumlahTerbanyak) {
+    jumlahTerbanyak = laporan.penjualanPerMenu[nama];
+    laporan.menuTerlaris = nama;
+  }
+}
+
+// Ringkasan kode memakai perulangan dan +=.
+for (let i = 0; i < laporan.kodeLunas.length; i++) {
+  if (i > 0) laporan.ringkasanKode += ", ";
+  laporan.ringkasanKode += laporan.kodeLunas[i];
+}
+
+// Menu stok menipis (< 3).
+for (const item of kasir.menu) {
+  if (item.stok < 3) laporan.menuStokMenipis.push(item.nama);
+}
+
+// CETAK LAPORAN
+
+
+console.log(`LAPORAN HARIAN ${kedai.nama.toUpperCase()}`);
+console.log(`Jumlah Transaksi : ${laporan.jumlahTransaksi}`);
+console.log(`Lunas            : ${laporan.jumlahLunas}`);
+console.log(`Kurang           : ${laporan.jumlahKurang}`);
+console.log(`Ditolak          : ${laporan.jumlahDitolak}`);
+console.log(`Pendapatan       : ${formatRupiah(laporan.pendapatan)}`);
+console.log(`Rata-rata Lunas  : ${formatRupiah(laporan.rataRata)}`);
+console.log(`Transaksi Terbesar: ${laporan.transaksiTerbesar.kode} (${formatRupiah(laporan.transaksiTerbesar.total)})`);
+console.log(`Menu Terlaris    : ${laporan.menuTerlaris}`);
+console.log(`Stok Menipis     : ${laporan.menuStokMenipis.join(", ")}`);
+console.log(`Kode Lunas       : ${laporan.ringkasanKode}`);
+
+console.log(" Penjualan per Menu");
+for (const nama in laporan.penjualanPerMenu) {
+  console.log(`${nama}: ${laporan.penjualanPerMenu[nama]}`);
+}
+
+console.log("Object.keys   :", Object.keys(laporan.penjualanPerMenu));
+console.log("Object.values :", Object.values(laporan.penjualanPerMenu));
+
+// Cek jumlah kode lunas.
+const jumlahKodeDariRingkasan = laporan.ringkasanKode.split(", ").length;
+console.log(`Cek jumlah kode: ${jumlahKodeDariRingkasan} vs jumlahLunas ${laporan.jumlahLunas} to ${jumlahKodeDariRingkasan === laporan.jumlahLunas}`);
+
+// Demo array method pada kodeLunas.
+console.log(" Demo Array Method");
+console.log(`includes("TRX-001"): ${laporan.kodeLunas.includes("TRX-001")}`);
+console.log(`indexOf("TRX-002") : ${laporan.kodeLunas.indexOf("TRX-002")}`);
+console.log(`slice(0, 2)        : ${laporan.kodeLunas.slice(0, 2)}`);
+
+const salinanKodeLunas = laporan.kodeLunas.slice();
+salinanKodeLunas.splice(0, 1);
+console.log(`Setelah splice salinan: ${salinanKodeLunas}`);
+console.log(`kodeLunas asli        : ${laporan.kodeLunas} (tidak berubah)`);
+
+// JAWABAN
+
+// 1. penjualanPerMenu dibuat object karena setiap nama menu menjadi KUNCI yang unik,  dan kita hanya perlu nilai jumlah per menu — bukan urutan.
+//    Bracket notation dipakai karena nama menu berisi spasi (misal "Kopi Susu") yang tidak valid sebagai nama properti dengan dot notation.
+
+// 2. Object.keys menghasilkan array KUNCI, Object.values menghasilkanarray NILAI. Dari kode: Object.keys = ["Kopi Susu", "Roti Bakar", ...], Object.values = [2, 1, ...].
+
+// 3. Yang mengubah array asli: splice. Yang tidak: includes, indexOf,slice. 
+//    Bukti: setelah splice pada salinan, isi kodeLunas asli tetap sama saat dicetak.
+
+// 4. rataRata diubah ke angka kembali (Math.round) karena pembagian bisa menghasilkan desimal, dan toFixed mengembalikan STRING. Kalau tidakdiubah,
+//    operasi aritmatika berikutnya akan jadi penggabungan string(bug tersembunyi).
+
+// 5. Hasil pengecekan: TRUE — jumlah potongan ringkasanKode.split(", ") sama dengan jumlahLunas. Karena setiap transaksi LUNAS mendorongsatu kode ke kodeLunas, 
+//    dan ringkasanKode dibangun dengan memisahkan kode-kode itu memakai ", " — jumlahnya pasti cocok.
